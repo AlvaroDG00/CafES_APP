@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+:root {
+  /* --- MODO CLARO (Beige) --- */
+  --bg-app: #F3EFE0;
+  --text-app: #4A3B32;
+  --bg-card: #E8E0D5;
+  --border-color: rgba(74, 59, 50, 0.1);
+  
+  /* Inputs Claro */
+  --input-bg: #FFFFFF;
+  --input-text: #4A3B32;
+  --input-border: transparent;
+  --input-placeholder: #9CA3AF;
+  
+  /* Botones Claro */
+  --btn-primary: #6F4E37;
+  --btn-text: #FFFFFF;
+}
+
+:root.dark {
+  /* --- MODO OSCURO (Dark Espresso) --- */
+  --bg-app: #1E1611;
+  --text-app: #F5EBDC;  /* <-- Esto hará que el título CaFES sea color crema */
+  --bg-card: #2C221C;
+  --border-color: #F5EBDC;
+  
+  /* Inputs Oscuro (Configuración de tu captura) */
+  --input-bg: #342A22;      /* Fondo Marrón medio */
+  --input-text: #F5EBDC;    /* Texto claro */
+  --input-border: #F5EBDC;  /* Borde claro */
+  --input-placeholder: rgba(245, 235, 220, 0.5); /* Crema semitransparente */
+  
+  /* Botones Oscuro */
+  --btn-primary: #F5EBDC;
+  --btn-text: #1E1611;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-app);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@theme {
+  --color-cafe-bg: var(--bg-app);
+  --color-cafe-text: var(--text-app);
+  --color-cafe-primary: var(--btn-primary);
+}
+
+/* Clase maestra para los Inputs */
+.input-cafe {
+  @apply w-full rounded-xl outline-none text-sm shadow-sm transition-all py-3.5;
+  
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border); /* Aquí se aplica el borde */
+  
+  @apply focus:ring-2 focus:ring-offset-1 focus:ring-cafe-primary/50;
+  
+  &::placeholder {
+    color: var(--input-placeholder);
+  }
+}
+
+@layer utilities {
+  /* Ocultar barra de desplazamiento para Chrome, Safari y Opera */
+  .no-scrollbar::-webkit-scrollbar {
+      display: none;
+  }
+
+
+  /* Ocultar barra de desplazamiento para IE, Edge y Firefox */
+  .no-scrollbar {
+      -ms-overflow-style: none;  /* IE y Edge */
+      scrollbar-width: none;  /* Firefox */
+  }
+}
+
+
+/* O SI LO QUIERES GLOBAL PARA TODA LA APP (RECOMENDADO PARA ESTILO MÓVIL): */
+* {
+  -ms-overflow-style: none; /* IE y Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari y Opera */
+}
+
+/* Ocultar el icono de "ojo" nativo del navegador en campos de contraseña */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+
+input[type="password"]::-webkit-password-reveal-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
