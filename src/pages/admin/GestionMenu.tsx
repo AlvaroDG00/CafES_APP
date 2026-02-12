@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MoreHorizontal, Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom'; // Añadido useNavigate
+import { MoreHorizontal, Plus, ChevronLeft } from 'lucide-react'; // Añadido ChevronLeft
 import { useProductos } from '../../context/ProductosContext';
 import { cn } from '../../lib/utils';
-import { useTheme } from '../../context/ThemeContext'; // Asegúrate de que esta ruta sea correcta
+import { useTheme } from '../../context/ThemeContext';
 
 export default function GestionMenu() {
-  const { isDark } = useTheme(); // Obtenemos el estado manual del tema
+  const navigate = useNavigate(); // Hook para volver
+  const { isDark } = useTheme();
   const { listaProductos, eliminarProducto } = useProductos();
   
   const [categoriaActiva, setCategoriaActiva] = useState("Bocadillo");
@@ -21,9 +22,21 @@ export default function GestionMenu() {
 
   return (
     <div className="p-6 h-full relative min-h-screen transition-colors duration-300">
-      <h1 className="text-3xl font-bold text-center text-cafe-text mb-8 mt-4">
-        Gestión del menú
-      </h1>
+      {/* CABECERA CON FLECHA */}
+      <div className="flex items-center mb-8 mt-4 relative">
+        <button 
+          onClick={() => navigate('/admin')}
+          className={cn(
+            "p-2 rounded-full shadow-sm transition-all active:scale-95 absolute left-0",
+            isDark ? "bg-[#2C221C] text-[#F5EBDC]" : "bg-white text-cafe-text"
+          )}
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="text-3xl font-bold text-center text-cafe-text flex-1">
+          Gestión del menú
+        </h1>
+      </div>
 
       <div className="flex justify-center mb-8">
         <Link 
@@ -39,7 +52,7 @@ export default function GestionMenu() {
         </Link>
       </div>
 
-      {/* Categorías - Forzamos el color con STYLE */}
+      {/* Categorías */}
       <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-6 px-6 mb-2">
         {categorias.map((cat) => {
           const isActive = categoriaActiva === cat;
@@ -64,7 +77,7 @@ export default function GestionMenu() {
         })}
       </div>
 
-      {/* Lista Productos - Forzamos fondo oscuro en las tarjetas */}
+      {/* Lista Productos */}
       <div className="mt-2 min-h-[300px] space-y-4">
         {productosFiltrados.map((prod) => (
             <div 

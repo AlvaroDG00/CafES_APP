@@ -1,20 +1,34 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MoreHorizontal, Plus, UserX } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom'; // Añadido useNavigate
+import { MoreHorizontal, Plus, UserX, ChevronLeft } from 'lucide-react'; // Añadido ChevronLeft
 import { useEmpleados } from '../../context/EmpleadosContext';
-import { useTheme } from '../../context/ThemeContext'; // Importamos el hook del tema
+import { useTheme } from '../../context/ThemeContext';
+import { cn } from '../../lib/utils';
 
 export default function GestionPersonal() {
+  const navigate = useNavigate(); // Hook para volver
   const { listaEmpleados, eliminarEmpleado } = useEmpleados();
-  const { isDark } = useTheme(); // Detectamos si estamos en modo oscuro
+  const { isDark } = useTheme();
   const [menuAbierto, setMenuAbierto] = useState<number | null>(null);
   const [idEliminar, setIdEliminar] = useState<number | null>(null);
 
   return (
     <div className="p-6 h-full relative bg-cafe-bg min-h-screen transition-colors duration-300">
-      <h1 className="text-3xl font-bold text-center text-cafe-text mb-8 mt-4">
-        Gestión de personal
-      </h1>
+      {/* CABECERA CON FLECHA */}
+      <div className="flex items-center mb-8 mt-4 relative">
+        <button 
+          onClick={() => navigate('/admin')}
+          className={cn(
+            "p-2 rounded-full shadow-sm transition-all active:scale-95 absolute left-0",
+            isDark ? "bg-[#2C221C] text-[#F5EBDC]" : "bg-white text-cafe-text"
+          )}
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="text-3xl font-bold text-center text-cafe-text flex-1">
+          Gestión de personal
+        </h1>
+      </div>
 
       {/* Botón Nuevo Empleado */}
       <div className="flex justify-center mb-10">
@@ -34,7 +48,6 @@ export default function GestionPersonal() {
         {listaEmpleados.map((emp) => (
           <div 
             key={emp.id} 
-            // ESTILO FORZADO PARA LA FILA
             style={{ 
               backgroundColor: isDark ? '#342A22' : '#FFFFFF',
               border: isDark ? '1px solid #F5EBDC20' : '1px solid #4A3B3210'
@@ -42,7 +55,6 @@ export default function GestionPersonal() {
             className="flex items-center justify-between p-4 rounded-2xl shadow-sm transition-all"
           >
             <div className="flex items-center gap-4">
-              {/* ESTILO FORZADO PARA EL AVATAR */}
               <div 
                 style={{ 
                   backgroundColor: isDark ? '#F5EBDC' : '#6F4E3720',
@@ -53,7 +65,6 @@ export default function GestionPersonal() {
                 {emp.nombre.charAt(0)}
               </div>
               
-              {/* TEXTO DEL NOMBRE */}
               <span className="font-bold text-cafe-text">
                 {emp.nombre}
               </span>
@@ -67,7 +78,6 @@ export default function GestionPersonal() {
                 <MoreHorizontal size={24} />
               </button>
 
-              {/* Menú Desplegable */}
               {menuAbierto === emp.id && (
                 <div className="absolute right-0 top-10 w-40 bg-white dark:bg-[#2C221C] rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-50 overflow-hidden">
                   <button 
@@ -86,7 +96,7 @@ export default function GestionPersonal() {
         ))}
       </div>
 
-      {/* MODAL DE ELIMINAR (Confirmación) */}
+      {/* MODAL DE ELIMINAR */}
       {idEliminar !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-[#A1887F] dark:bg-[#342A22] w-full max-w-sm rounded-xl shadow-2xl border border-white/10">

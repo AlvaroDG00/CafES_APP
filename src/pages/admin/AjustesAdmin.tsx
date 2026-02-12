@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { cn } from '../../lib/utils';
+import { ChevronLeft } from 'lucide-react'; // Añadido ChevronLeft
 
 export default function AjustesAdmin() {
   const { isDark, toggleTheme } = useTheme();
@@ -14,9 +15,21 @@ export default function AjustesAdmin() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-center text-cafe-text mb-8 mt-4">
-        Configuración
-      </h1>
+      {/* CABECERA CON FLECHA */}
+      <div className="flex items-center mb-8 mt-4 relative">
+        <button 
+          onClick={() => navigate('/admin')}
+          className={cn(
+            "p-2 rounded-full shadow-sm transition-all active:scale-95 absolute left-0",
+            isDark ? "bg-[#2C221C] text-[#F5EBDC]" : "bg-white text-cafe-text"
+          )}
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="text-3xl font-bold text-center text-cafe-text flex-1">
+          Configuración
+        </h1>
+      </div>
 
       <div className="rounded-xl shadow-sm overflow-hidden isolate">
         
@@ -38,7 +51,7 @@ export default function AjustesAdmin() {
           </button>
         </div>
 
-        {/* 2. Cerrar Sesión (Solo admin no necesita más opciones) */}
+        {/* 2. Cerrar Sesión */}
         <button 
             onClick={handleLogout}
             className="w-full p-5 flex justify-center items-center bg-[#DBCBB6] dark:bg-[#4E342E] border-t border-white/10 text-white dark:text-[#F5EBDC] font-bold text-lg hover:brightness-110 transition-all rounded-b-xl"

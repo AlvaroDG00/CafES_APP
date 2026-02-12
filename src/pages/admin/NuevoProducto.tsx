@@ -1,41 +1,69 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Check, Plus, Minus } from 'lucide-react';
 import { useProductos } from '../../context/ProductosContext';
+import { useTheme } from '../../context/ThemeContext';
+
 
 export default function NuevoProducto() {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const { anadirProducto } = useProductos();
-  
+ 
   const [formData, setFormData] = useState({
     nombre: '',
-    categoria: 'Bocadillo', // Valor inicial por defecto
-    alergenos: 'Ninguno',   // Valor inicial por defecto
-    precio: ''
+    categoria: 'Bocadillo',
+    alergenos: [] as string[],
+    precio: 0.00,
+    tamano: 'Entero',
+    ingredientes: [] as string[]
   });
+
 
   const [mostrandoExito, setMostrandoExito] = useState(false);
 
-  // Opciones para los selects
-  const listaCategorias = ['Bocadillo', 'Bebidas frías', 'Bebida caliente', 'Bollería', 'Pack/Menú'];
-  const listaAlergenos = ['Ninguno', 'Gluten', 'Lácteos', 'Frutos de cáscara', 'Huevo', 'Soja'];
 
-  const esFormularioValido = formData.nombre.trim() !== '' && formData.precio.trim() !== '';
+  const listaCategorias = ['Bocadillo', 'Bebidas frías', 'Bebida caliente', 'Bollería', 'Pack/Menú'];
+  const listaAlergenos = ['Gluten', 'Crustáceos', 'Huevo', 'Pescado', 'Cacahuetes', 'Soja', 'Leche', 'Frutos con cáscara', 'Apio', 'Mostaza', 'Granos de sésamo', 'Dióxido de azufre y sulfitos', 'Altramuces', 'Moluscos'];
+  const listaIngredientes = ['Chorizo', 'Salchichón', 'Queso', 'Jamón York', 'Pechuga de pavo'];
+  const listaTamanos = ['Entero', 'Medio'];
+
+
+  const esFormularioValido = formData.nombre.trim() !== '' && formData.precio > 0;
+
+
+  const ajustarPrecio = (cantidad: number) => {
+    setFormData(prev => ({
+      ...prev,
+      precio: Math.max(0, parseFloat((prev.precio + cantidad).toFixed(2)))
+    }));
+  };
+
+
+  const toggleSelection = (campo: 'alergenos' | 'ingredientes', valor: string) => {
+    setFormData(prev => {
+      const listaActual = prev[campo];
+      if (listaActual.includes(valor)) {
+        return { ...prev, [campo]: listaActual.filter(item => item !== valor) };
+      } else {
+        return { ...prev, [campo]: [...listaActual, valor] };
+      }
+    });
+  };
+
 
   const handleAñadir = () => {
     if (esFormularioValido) {
       anadirProducto({
-        nombre: formData.nombre,
-        categoria: formData.categoria,
-        // Si necesitas guardar los alérgenos, asegúrate de que tu interfaz 
-        // en ProductosContext.tsx también tenga ese campo.
-        precio: parseFloat(formData.precio.replace(',', '.')),
+        ...formData,
+        ingredientes: formData.categoria === 'Bocadillo' ? formData.ingredientes : [],
+        tamano: formData.categoria === 'Bocadillo' ? formData.tamano : undefined,
         img: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=150&auto=format&fit=crop'
       });
-
       setMostrandoExito(true);
     }
   };
+
 
   useEffect(() => {
     if (mostrandoExito) {
@@ -47,100 +75,188 @@ export default function NuevoProducto() {
     }
   }, [mostrandoExito, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+  const colores = {
+    fondo: isDark ? '#1A120B' : '#FDF8F3',
+    input: isDark ? '#2C1F14' : '#FFFFFF',
+    borde: isDark ? '#423224' : '#E5E7EB',
+    texto: isDark ? '#F5EBDC' : '#4B3F35',
+    label: isDark ? '#D4B996' : '#6F4E37'
   };
 
+
   return (
-    <div className="min-h-screen bg-cafe-bg p-6 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen p-6 pb-32 flex flex-col transition-all duration-300" style={{ backgroundColor: colores.fondo }}>
+     
       <header className="flex items-center mb-8 relative">
-        <Link to="/admin/menu-gestion" className="absolute left-0 p-2 -ml-2 text-cafe-text">
+        <Link to="/admin/menu-gestion" className="absolute left-0 p-2 -ml-2" style={{ color: colores.texto }}>
           <ChevronLeft size={28} />
         </Link>
-        <h1 className="w-full text-center text-2xl font-bold text-cafe-text">Nuevo producto</h1>
+        <h1 className="w-full text-center text-2xl font-bold" style={{ color: colores.texto }}>Nuevo producto</h1>
       </header>
 
-      <div className="space-y-5 flex-1">
-        {/* Nombre */}
-        <input 
-          name="nombre"
-          value={formData.nombre}
-          onChange={handleChange}
-          placeholder="Nombre del producto"
-          className="input-cafe px-4" 
-        />
 
-        {/* Selector de Categoría */}
-        <div className="relative">
-          <select 
-            name="categoria"
-            value={formData.categoria}
-            onChange={handleChange}
-            className="input-cafe px-4 appearance-none"
-          >
-            {listaCategorias.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-            <ChevronLeft size={20} className="-rotate-90" />
+      <div className="space-y-6 flex-1">
+       
+        {/* NOMBRE */}
+        <div>
+          <label className="block text-sm font-bold mb-2 ml-1" style={{ color: colores.label }}>Nombre del producto</label>
+          <input
+            value={formData.nombre}
+            onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+            placeholder="Ej. Bocadillo de la casa"
+            style={{ backgroundColor: colores.input, borderColor: colores.borde, color: colores.texto }}
+            className="w-full border rounded-xl px-4 py-4 outline-none transition-all placeholder:opacity-20"
+          />
+        </div>
+
+
+        {/* PRECIO TÁCTIL */}
+        <div>
+          <label className="block text-sm font-bold mb-2 ml-1" style={{ color: colores.label }}>Precio (€)</label>
+          <div className="flex items-center justify-between p-2 rounded-2xl border" style={{ backgroundColor: colores.input, borderColor: colores.borde }}>
+            <button
+              onClick={() => ajustarPrecio(-0.50)}
+              className="p-4 rounded-xl active:scale-90 transition-transform"
+              style={{ backgroundColor: isDark ? '#1A120B' : '#F3F4F6', color: colores.texto }}
+            >
+              <Minus size={24} />
+            </button>
+           
+            <span className="text-3xl font-black" style={{ color: colores.texto }}>
+              {formData.precio.toFixed(2)}€
+            </span>
+
+
+            <button
+              onClick={() => ajustarPrecio(0.50)}
+              className="p-4 rounded-xl active:scale-90 transition-transform"
+              style={{ backgroundColor: isDark ? '#1A120B' : '#F3F4F6', color: colores.texto }}
+            >
+              <Plus size={24} />
+            </button>
+          </div>
+          <div className="flex justify-center gap-4 mt-2">
+            <button onClick={() => ajustarPrecio(-0.10)} className="text-xs font-bold px-3 py-1 rounded-full border shadow-sm" style={{ color: colores.label, borderColor: colores.borde, backgroundColor: colores.input }}>-0.10</button>
+            <button onClick={() => ajustarPrecio(0.10)} className="text-xs font-bold px-3 py-1 rounded-full border shadow-sm" style={{ color: colores.label, borderColor: colores.borde, backgroundColor: colores.input }}>+0.10</button>
           </div>
         </div>
 
-        {/* Selector de Alérgenos */}
-        <div className="relative">
-          <select 
-            name="alergenos"
-            value={formData.alergenos}
-            onChange={handleChange}
-            className="input-cafe px-4 appearance-none"
-          >
-            {listaAlergenos.map(alg => (
-              <option key={alg} value={alg}>{alg}</option>
-            ))}
-          </select>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-            <ChevronLeft size={20} className="-rotate-90" />
+
+        {/* CATEGORÍA */}
+        <div>
+          <label className="block text-sm font-bold mb-2 ml-1" style={{ color: colores.label }}>Categoría</label>
+          <div className="relative">
+            <select
+              value={formData.categoria}
+              onChange={(e) => setFormData({...formData, categoria: e.target.value})}
+              style={{ backgroundColor: colores.input, borderColor: colores.borde, color: colores.texto }}
+              className="w-full border rounded-xl px-4 py-4 outline-none appearance-none"
+            >
+              {listaCategorias.map(cat => (
+                <option key={cat} value={cat} style={{ backgroundColor: colores.input, color: colores.texto }}>{cat}</option>
+              ))}
+            </select>
+            <ChevronLeft size={20} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none -rotate-90" style={{ color: colores.label }} />
           </div>
         </div>
 
-        {/* Precio */}
-        <input 
-          name="precio"
-          value={formData.precio}
-          onChange={handleChange}
-          type="number" 
-          step="0.01"
-          placeholder="Precio"
-          className="input-cafe px-4" 
-        />
+
+        {/* SECCIÓN ESPECIAL BOCADILLOS */}
+        {formData.categoria === 'Bocadillo' && (
+          <div className="p-5 rounded-2xl border space-y-6 animate-in fade-in zoom-in-95 duration-300"
+               style={{ backgroundColor: isDark ? 'rgba(111, 78, 55, 0.1)' : 'rgba(111, 78, 55, 0.05)', borderColor: colores.borde }}>
+           
+            {/* TAMAÑO */}
+            <div>
+               <label className="block text-sm font-bold mb-3" style={{ color: colores.label }}>Tamaño</label>
+               <div className="flex gap-3">
+                  {listaTamanos.map(tam => (
+                    <button
+                      key={tam}
+                      onClick={() => setFormData(prev => ({ ...prev, tamano: tam }))}
+                      style={{
+                        backgroundColor: formData.tamano === tam ? '#6F4E37' : colores.fondo,
+                        borderColor: formData.tamano === tam ? '#6F4E37' : colores.borde,
+                        color: formData.tamano === tam ? '#FFFFFF' : colores.texto
+                      }}
+                      className="flex-1 py-3 rounded-xl text-sm font-bold transition-all border shadow-sm"
+                    >
+                      {tam}
+                    </button>
+                  ))}
+               </div>
+            </div>
+
+
+            {/* INGREDIENTES */}
+            <div>
+               <label className="block text-sm font-bold mb-3" style={{ color: colores.label }}>Ingredientes principales</label>
+               <div className="flex flex-wrap gap-2">
+                  {listaIngredientes.map(ing => {
+                    const isSelected = formData.ingredientes.includes(ing);
+                    return (
+                      <button
+                        key={ing}
+                        onClick={() => toggleSelection('ingredientes', ing)}
+                        style={{
+                          backgroundColor: isSelected ? '#6F4E37' : colores.fondo,
+                          borderColor: isSelected ? '#6F4E37' : colores.borde,
+                          color: isSelected ? '#FFFFFF' : colores.texto
+                        }}
+                        className="px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 shadow-sm"
+                      >
+                        {isSelected && <Check size={14} />} {ing}
+                      </button>
+                    );
+                  })}
+               </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* ALÉRGENOS */}
+        <div>
+           <label className="block text-sm font-bold mb-2 ml-1" style={{ color: colores.label }}>Alérgenos</label>
+           <div className="flex flex-wrap gap-2">
+              {listaAlergenos.map(alg => {
+                const isSelected = formData.alergenos.includes(alg);
+                return (
+                  <button
+                    key={alg}
+                    onClick={() => toggleSelection('alergenos', alg)}
+                    style={{
+                      backgroundColor: isSelected ? 'rgba(34, 197, 94, 0.2)' : colores.input,
+                      borderColor: isSelected ? '#22C55E' : colores.borde,
+                      color: isSelected ? (isDark ? '#4ADE80' : '#166534') : colores.texto
+                    }}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-2"
+                  >
+                    {isSelected && <CheckCircle2 size={14} />} {alg}
+                  </button>
+                );
+              })}
+           </div>
+        </div>
       </div>
 
-      {/* Botón Añadir */}
-      <div className="mt-10 mb-6">
-        <button 
+
+      {/* BOTÓN AÑADIR */}
+      <div className="mt-10 mb-6 shrink-0">
+        <button
           onClick={handleAñadir}
           disabled={!esFormularioValido}
-          className={`w-full text-xl font-bold py-5 rounded-2xl shadow-lg transition-all duration-300
-            ${esFormularioValido 
-              ? 'bg-cafe-primary text-white dark:text-cafe-bg active:scale-[0.98]' 
-              : 'bg-gray-300 dark:bg-[#342A22] text-gray-500 dark:text-gray-600 cursor-not-allowed opacity-50'
-            }`}
+          style={{
+            backgroundColor: esFormularioValido ? '#6F4E37' : (isDark ? '#2C1F14' : '#D1D5DB'),
+            color: esFormularioValido ? '#FFFFFF' : (isDark ? 'rgba(245, 235, 220, 0.1)' : '#9CA3AF'),
+            boxShadow: esFormularioValido ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : 'none'
+          }}
+          className="w-full text-xl font-bold py-5 rounded-2xl transition-all duration-300 active:scale-95"
         >
           Añadir
         </button>
       </div>
-
-      {/* Ventana de Éxito */}
-      {mostrandoExito && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center px-6 pb-24 pointer-events-none">
-          <div className="bg-[#6F4E37] dark:bg-cafe-primary text-white dark:text-cafe-bg px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-10 duration-500">
-            <CheckCircle2 size={24} className="shrink-0" />
-            <span className="font-bold whitespace-nowrap">Producto añadido correctamente</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

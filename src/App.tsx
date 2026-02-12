@@ -17,6 +17,9 @@ import NuevoProducto from './pages/admin/NuevoProducto';
 import PasarelaPago from './pages/PasarelaPago';
 import { ProductosProvider } from './context/ProductosContext';
 import { EmpleadosProvider } from './context/EmpleadosContext';
+import EstadoPedidos from './pages/empleado/EstadoPedidos';
+import ConfiguracionEmpleado from './pages/empleado/ConfiguracionEmpleado';
+import MenuAdmin from './pages/admin/MenuAdmin';
 
 function App() {
   return (
@@ -42,15 +45,22 @@ function App() {
 
                 {/* Rutas Admin (Layout Admin) */}
                 <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<GestionPersonal />} />
+                  <Route index element={<MenuAdmin />} />
+                  <Route path="personal" element={<GestionPersonal />} />
                   <Route path="menu-gestion" element={<GestionMenu />} />
                   <Route path="nuevo-empleado" element={<NuevoEmpleado />} />
                   <Route path="nuevo-producto" element={<NuevoProducto />} />
                   <Route path="ajustes" element={<AjustesAdmin />} />
+                  <Route path="/admin/estado-pedidos" element={<EstadoPedidos />} />
                 </Route>
+
+                {/* Ruta del empleado de la cafetería */}
+
 
                 {/* Detalle (Sin layout) */}
                 <Route path="/producto/:id" element={<DetalleProducto />} />
+                <Route path="/empleado" element={<EstadoPedidos />} />
+                <Route path="/empleado/configuracion" element={<ConfiguracionEmpleado />} />
               </Routes>
             </BrowserRouter>
           </CarritoProvider>
