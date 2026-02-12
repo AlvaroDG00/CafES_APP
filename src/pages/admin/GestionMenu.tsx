@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MoreHorizontal, Plus } from 'lucide-react';
-import { useProductos } from '../../context/ProductosContext'; // <--- IMPORTAR CONTEXTO
+import { useProductos } from '../../context/ProductosContext';
 import { cn } from '../../lib/utils';
+import { useTheme } from '../../context/ThemeContext'; // Asegúrate de que esta ruta sea correcta
 
 export default function GestionMenu() {
-  // Traemos la lista y la función de eliminar del contexto
+  const { isDark } = useTheme(); // Obtenemos el estado manual del tema
   const { listaProductos, eliminarProducto } = useProductos();
   
   const [categoriaActiva, setCategoriaActiva] = useState("Bocadillo");
@@ -19,7 +20,7 @@ export default function GestionMenu() {
   const productosFiltrados = listaProductos.filter(p => p.categoria === categoriaActiva);
 
   return (
-    <div className="p-6 h-full relative">
+    <div className="p-6 h-full relative min-h-screen transition-colors duration-300">
       <h1 className="text-3xl font-bold text-center text-cafe-text mb-8 mt-4">
         Gestión del menú
       </h1>
@@ -32,13 +33,13 @@ export default function GestionMenu() {
            <div className="bg-sky-300 dark:bg-[#6AD2FF] text-white rounded-full p-2 shadow-sm">
              <Plus size={20} strokeWidth={3} />
            </div>
-           <span className="font-bold text-sm pr-2 text-[#4A3B32] dark:text-white">
+           <span className="font-bold text-sm pr-2 text-[#4A3B32] dark:text-[#1E1611]">
              Nuevo producto
            </span>
         </Link>
       </div>
 
-      {/* Categorías */}
+      {/* Categorías - Forzamos el color con STYLE */}
       <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-6 px-6 mb-2">
         {categorias.map((cat) => {
           const isActive = categoriaActiva === cat;
@@ -46,12 +47,16 @@ export default function GestionMenu() {
             <button
               key={cat}
               onClick={() => setCategoriaActiva(cat)}
-              className={cn(
-                "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border",
-                isActive
-                  ? "bg-[#8D6E63] text-white border-[#8D6E63] dark:bg-[#F5EBDC] dark:text-[#1E1611] dark:border-[#F5EBDC] shadow-md"
-                  : "bg-white text-cafe-text border-cafe-text/10 dark:bg-transparent dark:text-[#F5EBDC] dark:border-[#F5EBDC]/30 hover:dark:border-[#F5EBDC]"
-              )}
+              style={{
+                backgroundColor: isDark 
+                  ? (isActive ? '#F5EBDC' : '#2C221C') 
+                  : (isActive ? '#8D6E63' : '#FFFFFF'),
+                color: isDark 
+                  ? (isActive ? '#1E1611' : '#F5EBDC') 
+                  : (isActive ? '#FFFFFF' : '#4E342E'),
+                borderColor: isDark ? '#F5EBDC20' : '#4E342E10'
+              }}
+              className="px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm"
             >
               {cat}
             </button>
@@ -59,27 +64,27 @@ export default function GestionMenu() {
         })}
       </div>
 
-      {/* Lista Productos */}
-      <div className="mt-2 min-h-[300px]">
+      {/* Lista Productos - Forzamos fondo oscuro en las tarjetas */}
+      <div className="mt-2 min-h-[300px] space-y-4">
         {productosFiltrados.map((prod) => (
             <div 
               key={prod.id} 
-              className={cn(
-                  "flex items-center justify-between py-5 border-b border-cafe-text/10 dark:border-white/10 last:border-none transition-colors rounded-lg px-2 -mx-2",
-                  menuAbierto === prod.id ? "bg-blue-50 dark:bg-white/10" : "hover:bg-black/5 dark:hover:bg-white/5"
-              )}
+              style={{
+                backgroundColor: isDark ? '#2C221C' : '#FFFFFF',
+                borderColor: isDark ? '#F5EBDC10' : '#4E342E05'
+              }}
+              className="flex items-center justify-between p-4 rounded-2xl border shadow-sm transition-all"
             >
-              <span className="font-semibold text-lg text-cafe-text truncate pr-4">
+              <span 
+                style={{ color: isDark ? '#F5EBDC' : '#4E342E' }}
+                className="font-bold text-lg truncate pr-4"
+              >
                   {prod.nombre}
               </span>
               <button 
                   onClick={() => setMenuAbierto(prod.id)}
-                  className={cn(
-                      "p-2 rounded-full transition-colors shrink-0",
-                      menuAbierto === prod.id 
-                          ? "bg-sky-300 text-white" 
-                          : "text-gray-400 dark:text-[#F5EBDC]/50 hover:text-cafe-primary dark:hover:text-[#F5EBDC]"
-                  )}
+                  style={{ color: isDark ? '#F5EBDC60' : '#9CA3AF' }}
+                  className="p-2 rounded-full hover:bg-black/10 transition-colors shrink-0"
               >
                   <MoreHorizontal size={24} />
               </button>
@@ -90,10 +95,16 @@ export default function GestionMenu() {
       {/* Menú Opciones (Editar/Eliminar) */}
       {menuAbierto !== null && (
         <>
-            <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuAbierto(null)} />
-            <div className="fixed bottom-24 left-6 right-6 z-50 animate-in slide-in-from-bottom-4">
-                <div className="bg-[#D7CCC8] dark:bg-[#C4B6AC] rounded-xl overflow-hidden shadow-2xl mb-4">
-                    <button className="w-full p-4 text-center font-bold text-white border-b border-white/20 hover:bg-white/10 transition-colors">
+            <div className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" onClick={() => setMenuAbierto(null)} />
+            <div className="fixed bottom-24 left-6 right-6 z-50">
+                <div 
+                  style={{ backgroundColor: isDark ? '#342A22' : '#D7CCC8' }}
+                  className="rounded-2xl overflow-hidden shadow-2xl mb-4 border border-white/10"
+                >
+                    <button 
+                      style={{ color: isDark ? '#F5EBDC' : '#FFFFFF' }}
+                      className="w-full p-4 text-center font-bold border-b border-white/10 hover:bg-white/5 transition-colors"
+                    >
                         Editar producto
                     </button>
                     <button 
@@ -101,36 +112,42 @@ export default function GestionMenu() {
                             setIdEliminar(menuAbierto);
                             setMenuAbierto(null);
                         }}
-                        className="w-full p-4 text-center font-bold text-white hover:bg-white/10 transition-colors"
+                        className="w-full p-4 text-center font-bold text-red-400 hover:bg-white/5 transition-colors"
                     >
                         Eliminar
                     </button>
                 </div>
-                <button onClick={() => setMenuAbierto(null)} className="w-full p-4 bg-[#8D6E63] text-white font-bold rounded-xl shadow-lg">
+                <button 
+                  onClick={() => setMenuAbierto(null)} 
+                  className="w-full p-4 bg-[#8D6E63] text-white font-bold rounded-2xl shadow-lg"
+                >
                     Cancelar
                 </button>
             </div>
         </>
       )}
 
-      {/* Popup Confirmación de Eliminación Real */}
+      {/* Popup Confirmación */}
       {idEliminar !== null && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-[#A1887F] dark:bg-[#8D6E63] w-full max-w-sm rounded-xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div 
+              style={{ backgroundColor: isDark ? '#2C221C' : '#A1887F' }}
+              className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-white/10"
+            >
                 <div className="p-8 text-center">
-                    <h3 className="text-white text-lg font-bold">¿Está seguro de querer eliminar este producto?</h3>
+                    <h3 className="text-white text-lg font-bold">¿Eliminar este producto?</h3>
                 </div>
-                <div className="flex border-t border-black/10">
+                <div className="flex border-t border-white/10">
                     <button 
                         onClick={() => {
-                            if(eliminarProducto) eliminarProducto(idEliminar); // <--- LLAMADA AL CONTEXTO
+                            if(eliminarProducto) eliminarProducto(idEliminar);
                             setIdEliminar(null);
                         }}
-                        className="flex-1 p-4 text-red-600 dark:text-red-400 font-bold hover:bg-black/5 border-r border-black/10"
+                        className="flex-1 p-4 text-red-200 font-bold hover:bg-red-500/20 border-r border-white/10"
                     >
                         Eliminar
                     </button>
-                    <button onClick={() => setIdEliminar(null)} className="flex-1 p-4 text-white font-bold hover:bg-black/5">
+                    <button onClick={() => setIdEliminar(null)} className="flex-1 p-4 text-white font-bold hover:bg-white/10">
                         Cancelar
                     </button>
                 </div>

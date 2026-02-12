@@ -11,7 +11,7 @@ export default function Ajustes() {
  
   // Estados
   const [mostrarClave, setMostrarClave] = useState(false);
-  const [turnoAbierto, setTurnoAbierto] = useState(false); // Para abrir/cerrar el menú
+  const [turnoAbierto, setTurnoAbierto] = useState(false);
   const [turnoSeleccionado, setTurnoSeleccionado] = useState("Mañana");
 
 
@@ -20,7 +20,6 @@ export default function Ajustes() {
   };
 
 
-  // Opciones del turno con sus iconos
   const opcionesTurno = [
     { label: "Mañana", icon: <Sun size={18} className="text-orange-500" /> },
     { label: "Tarde", icon: <CloudSun size={18} className="text-yellow-600" /> },
@@ -28,7 +27,6 @@ export default function Ajustes() {
   ];
 
 
-  // Buscamos el objeto del turno actual para mostrar su icono en el botón principal
   const turnoActual = opcionesTurno.find(t => t.label === turnoSeleccionado);
 
 
@@ -43,18 +41,18 @@ export default function Ajustes() {
         <Link to="/menu" className="absolute left-0 p-2 -ml-2 text-gray-600 dark:text-[#F5EBDC] transition-colors">
           <ChevronLeft size={28} />
         </Link>
-        <h1 className="w-full text-center text-3xl font-bold tracking-tight text-cafe-text">
+        <h1 className="w-full text-center text-3xl font-bold tracking-tight text-cafe-text dark:text-[#F5EBDC]">
           Configuración
         </h1>
       </header>
 
 
       {/* Bloque de Configuración */}
-      <div className="rounded-xl shadow-sm isolate"> {/* 'isolate' ayuda con el z-index del menú */}
+      <div className="rounded-xl shadow-sm isolate">
        
         {/* 1. Modo Oscuro */}
         <div className={rowClass}>
-          <span className="font-bold text-base text-cafe-text">Modo Oscuro</span>
+          <span className="font-bold text-base text-cafe-text dark:text-[#F5EBDC]">Modo Oscuro</span>
          
           <button
             onClick={toggleTheme}
@@ -64,45 +62,51 @@ export default function Ajustes() {
             )}
           >
             <span className={cn(
-              "absolute top-1 left-1 bg-white dark:bg-[#1E1611] w-6 h-6 rounded-full shadow-md transition-transform duration-300",
-              isDark ? "translate-x-6" : "translate-x-0"
+              "absolute top-1 left-1 w-6 h-6 rounded-full shadow-md transition-transform duration-300",
+              isDark ? "translate-x-6 bg-[#1E1611]" : "translate-x-0 bg-white"
             )} />
           </button>
         </div>
 
 
-        {/* 2. Turno (DESPLEGABLE PERSONALIZADO "CUSTOM") */}
-        <div className={rowClass + " z-20"}> {/* Más z-index para que el menú flote sobre lo demás */}
-          <span className="font-bold text-base text-cafe-text whitespace-nowrap mr-4">Turno</span>
+        {/* 2. Turno (DESPLEGABLE PERSONALIZADO) */}
+        <div className={rowClass + " z-20"}>
+          <span className="font-bold text-base text-cafe-text dark:text-[#F5EBDC] whitespace-nowrap mr-4">Turno</span>
          
           <div className="relative w-full max-w-[160px]">
            
-            {/* BOTÓN DESPLEGABLE (Trigger) */}
+            {/* BOTÓN DESPLEGABLE */}
             <button
               onClick={() => setTurnoAbierto(!turnoAbierto)}
-              className="w-full bg-black/5 dark:bg-white/10 text-cafe-text py-2.5 px-4 rounded-lg flex items-center justify-between font-medium text-base transition-all hover:bg-black/10 dark:hover:bg-white/20"
+              className="w-full bg-black/5 dark:bg-white/10 text-cafe-text dark:text-[#F5EBDC] py-2.5 px-4 rounded-lg flex items-center justify-between font-medium text-base transition-all hover:bg-black/10 dark:hover:bg-white/20"
             >
-              {/* Contenido centrado: Icono + Texto */}
               <div className="flex items-center gap-2 mx-auto">
                 {turnoActual?.icon}
                 <span>{turnoSeleccionado}</span>
               </div>
-             
-              {/* Flechita que gira */}
               <ChevronDown
                 size={16}
-                className={cn("text-cafe-text opacity-50 transition-transform duration-300 absolute right-3", turnoAbierto && "rotate-180")}
+                className={cn("text-cafe-text dark:text-[#F5EBDC] opacity-50 transition-transform duration-300 absolute right-3", turnoAbierto && "rotate-180")}
               />
             </button>
 
 
-            {/* MENÚ FLOTANTE (Opciones) */}
+            {/* MENÚ FLOTANTE */}
             {turnoAbierto && (
               <>
-                {/* Telón invisible para cerrar al hacer clic fuera */}
                 <div className="fixed inset-0 z-10" onClick={() => setTurnoAbierto(false)} />
                
-                <div className="absolute top-full mt-2 w-full bg-white dark:bg-[#2C221C] rounded-xl shadow-xl border border-gray-100 dark:border-white/5 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2">
+                {/* SOLUCIÓN NUCLEAR:
+                   Usamos 'style' para forzar el color de fondo.
+                   Si isDark es true, fuerza el color #1E1611 (Marrón Oscuro).
+                */}
+                <div
+                    className="absolute top-full mt-2 w-full rounded-xl shadow-xl border overflow-hidden z-20 animate-in fade-in slide-in-from-top-2"
+                    style={{
+                        backgroundColor: isDark ? '#1E1611' : '#FFFFFF',
+                        borderColor: isDark ? 'rgba(245, 235, 220, 0.1)' : '#f3f4f6'
+                    }}
+                >
                   {opcionesTurno.map((opcion) => (
                     <button
                       key={opcion.label}
@@ -111,11 +115,16 @@ export default function Ajustes() {
                         setTurnoAbierto(false);
                       }}
                       className={cn(
-                        "w-full px-4 py-3 flex items-center justify-center gap-3 text-sm font-medium transition-colors hover:bg-cafe-primary/10 dark:hover:bg-white/10",
-                        turnoSeleccionado === opcion.label
-                          ? "text-cafe-primary bg-cafe-primary/5 dark:text-[#F5EBDC]"
-                          : "text-gray-600 dark:text-gray-400"
+                        "w-full px-4 py-3 flex items-center justify-center gap-3 text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10",
                       )}
+                      style={{
+                          color: turnoSeleccionado === opcion.label
+                            ? (isDark ? '#F5EBDC' : '#6F4E37')
+                            : (isDark ? 'rgba(245, 235, 220, 0.7)' : '#4B5563'),
+                          backgroundColor: turnoSeleccionado === opcion.label
+                            ? (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(111, 78, 55, 0.05)')
+                            : 'transparent'
+                      }}
                     >
                       {opcion.icon}
                       {opcion.label}
@@ -135,12 +144,12 @@ export default function Ajustes() {
              <input
                type={mostrarClave ? "text" : "password"}
                placeholder="Clave docente..."
-               className="w-full bg-transparent border-none outline-none text-base placeholder-gray-500 dark:placeholder-[#575552]/50 text-left pr-10"
+               className="w-full bg-transparent border-none outline-none text-base text-cafe-text dark:text-[#F5EBDC] placeholder-gray-500 dark:placeholder-[#F5EBDC]/50 text-left pr-10"
              />
              <button
                type="button"
                onClick={() => setMostrarClave(!mostrarClave)}
-               className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 dark:text-[#575552]/70 p-2 hover:text-cafe-primary transition-colors"
+               className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 dark:text-[#F5EBDC]/70 p-2 hover:text-cafe-primary dark:hover:text-[#F5EBDC] transition-colors"
              >
                {mostrarClave ? <EyeOff size={20} /> : <Eye size={20} />}
              </button>

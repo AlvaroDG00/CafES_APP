@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, CheckCircle, ShoppingBag } from 'lucide-react'; // Añadimos iconos para el modal
 import { productos } from '../lib/data';
 import { UiButton } from '../components/ui/Button';
 import { useCarrito } from '../context/CarritoContext';
@@ -13,12 +13,11 @@ export default function DetalleProducto() {
   const { anadirProducto } = useCarrito();
   const { isDark } = useTheme();
 
-
   const producto = productos.find(p => p.id === Number(id));
 
-
-  // --- ESTADO PARA SELECCIÓN MÚLTIPLE ---
+  // --- ESTADO PARA SELECCIÓN MÚLTIPLE Y CONFIRMACIÓN ---
   const [extrasSeleccionados, setExtrasSeleccionados] = useState<string[]>([]);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false); // Estado para el modal
 
 
   if (!producto) {
@@ -91,12 +90,17 @@ export default function DetalleProducto() {
 
   const handleAnadir = () => {
     if (producto) {
-        // AHORA ENVIAMOS UN OBJETO COMPLETO CON EXTRAS Y PRECIO
         anadirProducto({
             id: producto.id,
             extras: extrasSeleccionados,
             precio: precioTotal
         });
+        
+        // Activamos la ventana de confirmación
+        setMostrarConfirmacion(true);
+        
+        // Se cierra automáticamente tras 2.5 segundos
+        setTimeout(() => setMostrarConfirmacion(false), 2500);
     }
   };
 
@@ -183,6 +187,51 @@ export default function DetalleProducto() {
             </UiButton>
         </div>
       </div>
+
+      {/* VENTANA DE CONFIRMACIÓN (MODAL) */}
+      {mostrarConfirmacion && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+          <div 
+            style={{ 
+              backgroundColor: isDark ? '#2C221C' : '#FFFFFF',
+              borderColor: isDark ? '#F5EBDC20' : '#4E342E10'
+            }}
+            className="w-full max-w-xs rounded-3xl p-8 shadow-2xl border text-center animate-in zoom-in-95 duration-300"
+          >
+            <div className="flex justify-center mb-4">
+              <div className="bg-green-500/20 p-4 rounded-full">
+                <CheckCircle size={48} className="text-green-500" />
+              </div>
+            </div>
+
+            <h3 
+              style={{ color: isDark ? '#F5EBDC' : '#4E342E' }}
+              className="text-2xl font-bold mb-2"
+            >
+              ¡Añadido!
+            </h3>
+            
+            <p 
+              style={{ color: isDark ? '#F5EBDC80' : '#8D6E63' }}
+              className="text-sm mb-6"
+            >
+              Producto añadido a la cesta correctamente.
+            </p>
+
+            <button 
+              onClick={() => setMostrarConfirmacion(false)}
+              style={{ 
+                backgroundColor: '#8D6E63',
+                color: '#FFFFFF'
+              }}
+              className="w-full py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <ShoppingBag size={18} />
+              Continuar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
