@@ -5,7 +5,7 @@
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Airtable](https://img.shields.io/badge/Airtable-18BFFF?style=for-the-badge&logo=Airtable&logoColor=white)
 
-¡Bienvenido al repositorio de **CafES App**! Este proyecto nace con el objetivo de digitalizar y agilizar los procesos de pedido y gestión en la cafetería del instituto **IES Lomo de la Herradura**.
+¡Bienvenido al repositorio de **CafES App**! Este proyecto nace con el objetivo de digitalizar y agilizar los procesos de pedido y gestión en las cafeterías escolares.
 
 ---
 
