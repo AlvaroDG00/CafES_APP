@@ -85,7 +85,7 @@ export default function GestionPersonal() {
                   {emp.nombre.charAt(0)}
                 </div>
 
-                {/* Información del empleado: Nombre y Correo */}
+                {/* Información del empleado */}
                 <div className="flex flex-col">
                   <span
                     className={cn(
