@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { useTheme } from "../context/ThemeContext";
 
@@ -7,6 +7,7 @@ export default function AdminLayout() {
   const { isDark } = useTheme();
 
   // Función de estilo de botones
+  //@ts-ignore
   const btnClass = (path: string) => {
     // Verificamos si la ruta actual EMPIEZA con el path (para sub-rutas)
     const isActive =

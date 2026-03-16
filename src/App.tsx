@@ -1,4 +1,4 @@
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import Menu from "./pages/Menu";
@@ -33,6 +33,7 @@ function App() {
             <BrowserRouter>
               <Routes>
                 {/* Rutas Públicas */}
+                <Route path="/" element={<Navigate to="/inicio" replace />} />
                 <Route path="/inicio" element={<Login />} />
                 <Route path="/registro" element={<Registro />} />
 

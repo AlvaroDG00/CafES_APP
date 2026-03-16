@@ -1,4 +1,20 @@
-export const productos = [
+export interface Producto {
+  id: number;
+  nombre: string;
+  precio: number;
+  categoria: string;
+  img: string;
+  desc?: string;          // Aquí está la clave para que no dé error
+  precioEntero?: number; 
+  precioMedio?: number;
+  precioPulguita?: number;
+  ingredientes?: string[];
+  alergenos?: string[];
+}
+
+
+
+export const productos: Producto[] = [
   // --- BOCADILLOS ---
   {
     id: 1,

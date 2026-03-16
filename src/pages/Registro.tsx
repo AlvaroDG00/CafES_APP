@@ -76,7 +76,7 @@ export default function Registro() {
         <p className="mt-6 text-center text-xs text-gray-500">
           ¿Ya tienes cuenta?{" "}
           <Link
-            to="/login"
+            to="/inicio"
             className="text-cafe-primary font-bold ml-1 hover:underline"
           >
             Inicia sesión

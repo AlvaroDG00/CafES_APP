@@ -125,7 +125,7 @@ export default function PasarelaPago() {
                   />
                 }
                 placeholder="123"
-                type="text"
+                type="number"
                 required
                 maxLength={3}
                 className={inputDarkClass}

@@ -95,7 +95,7 @@ export default function Menu() {
 
                 {/* Descripción debajo del título */}
                 <p className="text-sm text-cafe-text opacity-70 line-clamp-2 leading-snug">
-                  {prod.desc}
+                  {(prod as any).desc}
                 </p>
               </div>
             </Link>
