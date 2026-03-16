@@ -1,55 +1,48 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { productos as productosIniciales } from '../lib/data';
+import { createContext, useContext, useState, type ReactNode } from "react";
+import { productos as productosIniciales } from "../lib/data";
 
-
-// 1. Añadimos 'disponible' a la interfaz
 export interface Producto {
   id: number;
   nombre: string;
   precio: number;
   categoria: string;
   img: string;
-  disponible?: boolean; // <--- AÑADIR ESTO (opcional para que no de error con datos viejos)
+  disponible?: boolean;
 }
-
 
 interface ProductosContextType {
   listaProductos: Producto[];
-  anadirProducto: (nuevo: Omit<Producto, 'id'>) => void;
+  anadirProducto: (nuevo: Omit<Producto, "id">) => void;
   eliminarProducto: (id: number) => void;
-  actualizarProducto: (id: number, nuevosDatos: Partial<Producto>) => void; // <--- AÑADIR ESTO
+  actualizarProducto: (id: number, nuevosDatos: Partial<Producto>) => void;
 }
 
-
-const ProductosContext = createContext<ProductosContextType | undefined>(undefined);
-
+const ProductosContext = createContext<ProductosContextType | undefined>(
+  undefined,
+);
 
 export function ProductosProvider({ children }: { children: ReactNode }) {
-  const [listaProductos, setListaProductos] = useState<Producto[]>(productosIniciales);
+  const [listaProductos, setListaProductos] =
+    useState<Producto[]>(productosIniciales);
 
-
-  const anadirProducto = (nuevo: Omit<Producto, 'id'>) => {
+  const anadirProducto = (nuevo: Omit<Producto, "id">) => {
     const nuevoProducto = {
       ...nuevo,
       id: Date.now(),
-      disponible: true, // <--- Por defecto, los nuevos productos están disponibles
+      disponible: true,
     };
     setListaProductos((prev) => [...prev, nuevoProducto]);
   };
 
-
   const eliminarProducto = (id: number) => {
-    setListaProductos((prev) => prev.filter(p => p.id !== id));
+    setListaProductos((prev) => prev.filter((p) => p.id !== id));
   };
 
-
-  // --- ESTA ES LA FUNCIÓN QUE TE FALTABA ---
   const actualizarProducto = (id: number, nuevosDatos: Partial<Producto>) => {
     setListaProductos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...nuevosDatos } : p))
+      prev.map((p) => (p.id === id ? { ...p, ...nuevosDatos } : p)),
     );
   };
-
 
   return (
     <ProductosContext.Provider
@@ -57,7 +50,7 @@ export function ProductosProvider({ children }: { children: ReactNode }) {
         listaProductos,
         anadirProducto,
         eliminarProducto,
-        actualizarProducto // <--- PASARLA AQUÍ
+        actualizarProducto,
       }}
     >
       {children}
@@ -65,11 +58,10 @@ export function ProductosProvider({ children }: { children: ReactNode }) {
   );
 }
 
-
 export function useProductos() {
   const context = useContext(ProductosContext);
   if (!context) {
-    throw new Error('useProductos debe usarse dentro de un ProductosProvider');
+    throw new Error("useProductos debe usarse dentro de un ProductosProvider");
   }
   return context;
 }

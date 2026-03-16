@@ -1,10 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 // Actualizamos la definición del Item
 export interface CartItem {
   id: number;
   extras: string[];
-  precio: number; 
+  precio: number;
   alergias?: string[]; // Añadimos esto. El "?" significa que es opcional.
 }
 
@@ -40,7 +40,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
         cantidad: items.length,
         anadirProducto,
         eliminarProducto,
-        limpiarCarrito
+        limpiarCarrito,
       }}
     >
       {children}
@@ -51,7 +51,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
 export function useCarrito() {
   const context = useContext(CarritoContext);
   if (context === undefined) {
-    throw new Error('useCarrito debe usarse dentro de un CarritoProvider');
+    throw new Error("useCarrito debe usarse dentro de un CarritoProvider");
   }
   return context;
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 export interface Empleado {
   id: number;
@@ -8,11 +8,13 @@ export interface Empleado {
 
 interface EmpleadosContextType {
   listaEmpleados: Empleado[];
-  anadirEmpleado: (nuevo: Omit<Empleado, 'id'>) => void;
+  anadirEmpleado: (nuevo: Omit<Empleado, "id">) => void;
   eliminarEmpleado: (id: number) => void;
 }
 
-const EmpleadosContext = createContext<EmpleadosContextType | undefined>(undefined);
+const EmpleadosContext = createContext<EmpleadosContextType | undefined>(
+  undefined,
+);
 
 export function EmpleadosProvider({ children }: { children: ReactNode }) {
   const [listaEmpleados, setListaEmpleados] = useState<Empleado[]>([
@@ -21,16 +23,18 @@ export function EmpleadosProvider({ children }: { children: ReactNode }) {
     { id: 3, nombre: "Empleado/a 3", correo: "emp3@cafe.com" },
   ]);
 
-  const anadirEmpleado = (nuevo: Omit<Empleado, 'id'>) => {
-    setListaEmpleados(prev => [...prev, { ...nuevo, id: Date.now() }]);
+  const anadirEmpleado = (nuevo: Omit<Empleado, "id">) => {
+    setListaEmpleados((prev) => [...prev, { ...nuevo, id: Date.now() }]);
   };
 
   const eliminarEmpleado = (id: number) => {
-    setListaEmpleados(prev => prev.filter(emp => emp.id !== id));
+    setListaEmpleados((prev) => prev.filter((emp) => emp.id !== id));
   };
 
   return (
-    <EmpleadosContext.Provider value={{ listaEmpleados, anadirEmpleado, eliminarEmpleado }}>
+    <EmpleadosContext.Provider
+      value={{ listaEmpleados, anadirEmpleado, eliminarEmpleado }}
+    >
       {children}
     </EmpleadosContext.Provider>
   );
@@ -38,6 +42,7 @@ export function EmpleadosProvider({ children }: { children: ReactNode }) {
 
 export const useEmpleados = () => {
   const context = useContext(EmpleadosContext);
-  if (!context) throw new Error("useEmpleados debe usarse dentro de EmpleadosProvider");
+  if (!context)
+    throw new Error("useEmpleados debe usarse dentro de EmpleadosProvider");
   return context;
 };
