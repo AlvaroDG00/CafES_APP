@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "react"; // <-- CORRECCIÓN 1: Eliminado useEffect
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -10,26 +10,84 @@ import {
   EyeOff,
   ChevronDown,
   Check,
+  ShieldCheck
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../lib/utils";
+import api from "../api/config";
+import { AxiosError } from "axios";
 
 export default function ConfiguracionCliente({
   usuarioInicial,
 }: {
-  usuarioInicial?: any;
+  // <-- CORRECCIÓN 2: Tipado seguro en lugar de 'any'
+  usuarioInicial?: { turno?: string; nombre?: string }; 
 }) {
   const navigate = useNavigate();
   const { isDark, setIsDark } = useTheme();
 
+  // --- ESTADOS DE DATOS REALES ---
+  // <-- CORRECCIÓN 3: Quitamos setNombre porque aquí no editamos el nombre, solo lo leemos
+  const nombre = localStorage.getItem("usuario_nombre") || "Usuario";
+  const [rol, setRol] = useState(localStorage.getItem("usuario_rol") || "Alumno");
+  const email = localStorage.getItem("usuario_email") || "";
+
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
   const [turno, setTurno] = useState(usuarioInicial?.turno || "Mañana");
-
-  // Nuevo estado para controlar el desplegable visual
   const [mostrarMenuTurnos, setMostrarMenuTurnos] = useState(false);
 
+  // Estados para la validación VIP
+  const [loadingVip, setLoadingVip] = useState(false);
+  const [mensajeVip, setMensajeVip] = useState({ texto: "", error: false });
+
   const opcionesTurno = ["Mañana", "Tarde", "Noche"];
+
+  // ==========================================
+  // 🔐 FUNCIÓN: ACTIVAR MODO DOCENTE
+  // ==========================================
+  const handleActivarVip = async () => {
+    if (clave.length !== 6) {
+      setMensajeVip({ texto: "La clave debe tener 6 caracteres", error: true });
+      return;
+    }
+
+    setLoadingVip(true);
+    setMensajeVip({ texto: "", error: false });
+
+    try {
+      const response = await api.post("/validar-vip", {
+        email: email,
+        codigo: clave,
+        nuevoRol: "Docente/PAS"
+      });
+
+      setRol("Docente/PAS");
+      localStorage.setItem("usuario_rol", "Docente/PAS");
+      setMensajeVip({ texto: response.data.message || "¡Cuenta actualizada!", error: false });
+      setClave("");
+      
+    } catch (error) {
+      const err = error as AxiosError<{ error: string }>;
+      setMensajeVip({
+        texto: err.response?.data?.error || "Error al verificar código",
+        error: true
+      });
+    } finally {
+      setLoadingVip(false);
+    }
+  };
+
+  // ==========================================
+  // 🚪 FUNCIÓN: CERRAR SESIÓN SEGURO
+  // ==========================================
+  const handleLogout = () => {
+    localStorage.removeItem("usuario_id");
+    localStorage.removeItem("usuario_rol");
+    localStorage.removeItem("usuario_email");
+    localStorage.removeItem("usuario_nombre");
+    navigate("/inicio");
+  };
 
   return (
     <div
@@ -52,20 +110,23 @@ export default function ConfiguracionCliente({
             isDark ? "bg-[#2C221C]" : "bg-white",
           )}
         >
-          <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-            <User size={32} />
+          <div className={cn(
+            "p-3 rounded-full",
+            rol === "Docente/PAS" ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"
+          )}>
+            {rol === "Docente/PAS" ? <ShieldCheck size={32} /> : <User size={32} />}
           </div>
           <div>
-            <p className="text-xs opacity-50 font-medium">
-              Estudiante / Docente
+            <p className="text-xs opacity-50 font-bold uppercase tracking-wider">
+              {rol}
             </p>
             <p
               className={cn(
-                "text-lg font-bold",
+                "text-lg font-bold capitalize",
                 isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
               )}
             >
-              {usuarioInicial?.nombre || "Usuario Invitado"}
+              {nombre}
             </p>
           </div>
         </div>
@@ -77,96 +138,115 @@ export default function ConfiguracionCliente({
             isDark ? "bg-[#2C221C]" : "bg-white",
           )}
         >
-          {/* Input Clave */}
-          <div className="p-5 flex items-center gap-4 border-b border-black/5 dark:border-white/5">
-            <Key className="text-amber-500 shrink-0" size={20} />
-            <div className="flex-1">
-              <p className="text-[10px] uppercase tracking-wider opacity-50 font-bold">
-                Clave Docente / ID
-              </p>
-              <div className="flex items-center gap-2">
-                <input
-                  type={mostrarClave ? "text" : "password"}
-                  value={clave}
-                  placeholder="Introduce tu clave"
-                  onChange={(e) => setClave(e.target.value)}
-                  className={cn(
-                    "bg-transparent font-bold outline-none w-full",
-                    isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
-                  )}
-                />
-                <button
-                  onClick={() => setMostrarClave(!mostrarClave)}
-                  className="p-1 opacity-50"
-                >
-                  {mostrarClave ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Input Turno */}
-          <div className="p-5 flex items-center gap-4 relative">
-            <Clock className="text-green-500 shrink-0" size={20} />
-            <div className="flex-1 relative">
-              <p className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
-                Turno asignado
-              </p>
-
-              {/* Botón Trigger */}
-              <button
-                onClick={() => setMostrarMenuTurnos(!mostrarMenuTurnos)}
-                className={cn(
-                  "flex items-center justify-between w-full font-bold outline-none",
-                  isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
-                )}
-              >
-                <span>{turno}</span>
-                <ChevronDown
-                  size={18}
-                  className={cn(
-                    "transition-transform duration-300 opacity-50",
-                    mostrarMenuTurnos ? "rotate-180" : "",
-                  )}
-                />
-              </button>
-
-              {/* Menú Desplegable Flotante */}
-              {mostrarMenuTurnos && (
-                <div
-                  className={cn(
-                    "absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
-                    isDark
-                      ? "bg-[#1A120B] border-[#F5EBDC]/10"
-                      : "bg-[#FFFFFF] border-[#4E342E]/10",
-                  )}
-                >
-                  {opcionesTurno.map((opcion) => (
-                    <button
-                      key={opcion}
-                      onClick={() => {
-                        setTurno(opcion);
-                        setMostrarMenuTurnos(false);
-                      }}
+          {/* CAJÓN VIP: Solo se muestra si el usuario es Alumno */}
+          {rol === "Alumno" && (
+            <div className="p-5 flex flex-col gap-2 border-b border-black/5 dark:border-white/5">
+              <div className="flex items-center gap-4">
+                <Key className="text-amber-500 shrink-0" size={20} />
+                <div className="flex-1">
+                  <p className="text-[10px] uppercase tracking-wider opacity-50 font-bold">
+                    Clave Docente / PAS
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type={mostrarClave ? "text" : "password"}
+                      value={clave}
+                      placeholder="Introduce tu código"
+                      onChange={(e) => setClave(e.target.value)}
+                      maxLength={6}
                       className={cn(
-                        "w-full text-left px-4 py-3 text-sm font-bold flex items-center justify-between transition-colors",
-                        isDark
-                          ? "hover:bg-[#F5EBDC]/10 text-[#F5EBDC]"
-                          : "hover:bg-[#4E342E]/5 text-[#4E342E]",
-                        turno === opcion &&
-                          (isDark ? "bg-[#F5EBDC]/5" : "bg-[#4E342E]/5"),
+                        "bg-transparent font-bold outline-none w-full uppercase",
+                        isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
                       )}
+                    />
+                    <button
+                      onClick={() => setMostrarClave(!mostrarClave)}
+                      className="p-1 opacity-50 hover:opacity-100"
                     >
-                      {opcion}
-                      {turno === opcion && (
-                        <Check size={16} className="text-green-500" />
-                      )}
+                      {mostrarClave ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                  ))}
+                    {clave.length > 0 && (
+                      <button
+                        onClick={handleActivarVip}
+                        disabled={loadingVip}
+                        className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-full shadow-md active:scale-95 transition-all"
+                      >
+                        {loadingVip ? "..." : "Activar"}
+                      </button>
+                    )}
+                  </div>
                 </div>
+              </div>
+              {mensajeVip.texto && (
+                <p className={cn("text-xs font-bold pl-9", mensajeVip.error ? "text-red-500" : "text-green-500")}>
+                  {mensajeVip.texto}
+                </p>
               )}
             </div>
-          </div>
+          )}
+
+          {/* Input Turno: Solo visible para Alumnos */}
+          {rol === "Alumno" && (
+            <div className="p-5 flex items-center gap-4 relative border-t border-black/5 dark:border-white/5">
+              <Clock className="text-green-500 shrink-0" size={20} />
+              <div className="flex-1 relative">
+                <p className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
+                  Turno asignado
+                </p>
+
+                <button
+                  onClick={() => setMostrarMenuTurnos(!mostrarMenuTurnos)}
+                  className={cn(
+                    "flex items-center justify-between w-full font-bold outline-none",
+                    isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
+                  )}
+                >
+                  <span>{turno}</span>
+                  <ChevronDown
+                    size={18}
+                    className={cn(
+                      "transition-transform duration-300 opacity-50",
+                      mostrarMenuTurnos ? "rotate-180" : "",
+                    )}
+                  />
+                </button>
+
+                {mostrarMenuTurnos && (
+                  <div
+                    className={cn(
+                      "absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
+                      isDark
+                        ? "bg-[#1A120B] border-[#F5EBDC]/10"
+                        : "bg-[#FFFFFF] border-[#4E342E]/10",
+                    )}
+                  >
+                    {opcionesTurno.map((opcion) => (
+                      <button
+                        key={opcion}
+                        onClick={() => {
+                          setTurno(opcion);
+                          setMostrarMenuTurnos(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-4 py-3 text-sm font-bold flex items-center justify-between transition-colors",
+                          isDark
+                            ? "hover:bg-[#F5EBDC]/10 text-[#F5EBDC]"
+                            : "hover:bg-[#4E342E]/5 text-[#4E342E]",
+                          turno === opcion &&
+                            (isDark ? "bg-[#F5EBDC]/5" : "bg-[#4E342E]/5"),
+                        )}
+                      >
+                        {opcion}
+                        {turno === opcion && (
+                          <Check size={16} className="text-green-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SWITCH MODO OSCURO */}
@@ -211,7 +291,7 @@ export default function ConfiguracionCliente({
 
         {/* BOTÓN CERRAR SESIÓN */}
         <button
-          onClick={() => navigate("/inicio")}
+          onClick={handleLogout}
           className={cn(
             "w-full p-6 rounded-[2.5rem] flex items-center gap-4 shadow-sm active:scale-95 transition-all text-left relative z-10",
             isDark ? "bg-[#2C221C]" : "bg-white",

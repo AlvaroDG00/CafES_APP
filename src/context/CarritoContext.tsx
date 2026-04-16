@@ -1,11 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-// Actualizamos la definición del Item
 export interface CartItem {
-  id: number;
+  id: string | number; 
   extras: string[];
   precio: number;
-  alergias?: string[]; // Añadimos esto. El "?" significa que es opcional.
+  alergias?: string[]; 
 }
 
 interface CarritoContextType {
@@ -48,6 +47,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCarrito() {
   const context = useContext(CarritoContext);
   if (context === undefined) {

@@ -60,7 +60,7 @@ export default function ConfiguracionBase({ rol }: ConfigProps) {
                 isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
               )}
             >
-              {rol}:
+              {rol}
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, type ReactNode } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -18,83 +18,48 @@ import {
   CircleDashed,
   Wine,
   AlertTriangle,
+  CheckCircle2
 } from "lucide-react";
-import { productos } from "../lib/data";
 import { UiButton } from "../components/ui/Button";
 import { useCarrito } from "../context/CarritoContext";
 import { useTheme } from "../context/ThemeContext";
+import { useProductos } from "../context/ProductosContext"; 
 import { cn } from "../lib/utils";
 
-const ALERGENOS_CONFIG: Record<
-  string,
-  { color: string; icon: React.ReactNode }
-> = {
-  Gluten: {
-    color: "bg-[#8B9A47]",
-    icon: <Wheat size={14} className="text-white" />,
-  },
-  Crustáceos: {
-    color: "bg-[#2A938C]",
-    icon: <Shell size={14} className="text-white" />,
-  },
-  Huevo: {
-    color: "bg-[#885776]",
-    icon: <Egg size={14} className="text-white" />,
-  },
-  Pescado: {
-    color: "bg-[#F3B72A]",
-    icon: <Fish size={14} className="text-white" />,
-  },
-  Cacahuetes: {
-    color: "bg-[#E88C28]",
-    icon: <Bean size={14} className="text-white" />,
-  },
-  Soja: {
-    color: "bg-[#E3266A]",
-    icon: <Bean size={14} className="text-white" />,
-  },
-  Leche: {
-    color: "bg-[#888888]",
-    icon: <Milk size={14} className="text-white" />,
-  },
-  "Frutos con cáscara": {
-    color: "bg-[#A37941]",
-    icon: <Nut size={14} className="text-white" />,
-  },
-  Apio: {
-    color: "bg-[#7872A6]",
-    icon: <Leaf size={14} className="text-white" />,
-  },
-  Mostaza: {
-    color: "bg-[#0F5E5C]",
-    icon: <Beaker size={14} className="text-white" />,
-  },
-  "Granos de Sésamo": {
-    color: "bg-[#D07228]",
-    icon: <CircleDashed size={14} className="text-white" />,
-  },
-  "Dióxido de azufre y sulfitos": {
-    color: "bg-[#ED255D]",
-    icon: <Wine size={14} className="text-white" />,
-  },
-  Altramuces: {
-    color: "bg-[#54908C]",
-    icon: <Leaf size={14} className="text-white" />,
-  },
-  Moluscos: {
-    color: "bg-[#EA6340]",
-    icon: <Shell size={14} className="text-white" />,
-  },
+// CORRECCIÓN: Volvemos a los iconos limpios y coloreados de lucide-react
+const ALERGENOS_CONFIG: Record<string, ReactNode> = {
+  "Gluten": <Wheat size={16} color="#8B9A47" />,
+  "Crustáceos": <Shell size={16} color="#2A938C" />,
+  "Huevo": <Egg size={16} color="#885776" />,
+  "Pescado": <Fish size={16} color="#F3B72A" />,
+  "Cacahuetes": <Bean size={16} color="#E88C28" />,
+  "Soja": <Bean size={16} color="#E3266A" />,
+  "Leche": <Milk size={16} color="#888888" />,
+  "Frutos con cáscara": <Nut size={16} color="#A37941" />,
+  "Apio": <Leaf size={16} color="#7872A6" />,
+  "Mostaza": <Beaker size={16} color="#0F5E5C" />,
+  "Granos de sésamo": <CircleDashed size={16} color="#D07228" />,
+  "Sulfitos": <Wine size={16} color="#ED255D" />,
+  "Dióxido de azufre y sulfitos": <Wine size={16} color="#ED255D" />,
+  "Altramuces": <Leaf size={16} color="#54908C" />,
+  "Moluscos": <Shell size={16} color="#EA6340" />,
 };
+
+const listaAlergenos = [
+  "Gluten", "Crustáceos", "Huevo", "Pescado", "Cacahuetes", "Soja", 
+  "Leche", "Frutos con cáscara", "Apio", "Mostaza", "Granos de sésamo", 
+  "Sulfitos", "Altramuces", "Moluscos"
+];
 
 export default function DetalleProducto() {
   const { id } = useParams();
   const { anadirProducto } = useCarrito();
   const { isDark } = useTheme();
+  
+  const { listaProductos } = useProductos();
 
-  const producto = productos.find((p) => p.id === Number(id));
+  const producto = listaProductos.find((p) => p.id.toString() === (id || ""));
 
-  // --- LÓGICA ESPECIAL PARA BOCADILLOS DE EMBUTIDO ---
   const nombreLower = producto?.nombre.toLowerCase() || "";
   const esUnEmbutido = nombreLower.includes("un embutido");
   const esDosEmbutidos = nombreLower.includes("dos embutidos");
@@ -103,50 +68,26 @@ export default function DetalleProducto() {
   const maxEmbutidos = esUnEmbutido ? 1 : esDosEmbutidos ? 2 : 0;
   const opcionesEmbutidos = ["Jamón cocido", "Queso gouda", "Pavo cocido"];
 
-  // ESTADOS GENERALES
   const [extrasSeleccionados, setExtrasSeleccionados] = useState<string[]>([]);
-  const [tamanoSeleccionado, setTamanoSeleccionado] = useState<string | null>(
-    null,
-  );
+  const [tamanoSeleccionado, setTamanoSeleccionado] = useState<string | null>(null);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
 
-  // ESTADOS PARA ALERGIAS (Del cliente)
   const [tieneAlergias, setTieneAlergias] = useState(false);
-  const [alergiasSeleccionadas, setAlergiasSeleccionadas] = useState<string[]>(
-    [],
-  );
-
-  // ESTADO PARA INGREDIENTES QUITADOS (Normales)
-  const [ingredientesQuitados, setIngredientesQuitados] = useState<string[]>(
-    [],
-  );
-
-  // ESTADO PARA ELEGIR EMBUTIDOS
-  const [embutidosSeleccionados, setEmbutidosSeleccionados] = useState<
-    string[]
-  >([]);
-
-  useEffect(() => {
-    setExtrasSeleccionados([]);
-    setTamanoSeleccionado(null);
-    setTieneAlergias(false);
-    setAlergiasSeleccionadas([]);
-    setIngredientesQuitados([]);
-    setEmbutidosSeleccionados([]);
-  }, [id]);
+  const [alergiasSeleccionadas, setAlergiasSeleccionadas] = useState<string[]>([]);
+  const [ingredientesQuitados, setIngredientesQuitados] = useState<string[]>([]);
+  const [embutidosSeleccionados, setEmbutidosSeleccionados] = useState<string[]>([]);
 
   if (!producto) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-cafe-text">
-        <p>Producto no encontrado</p>
-        <Link to="/menu" className="text-cafe-primary font-bold mt-4">
+      <div className="flex flex-col items-center justify-center h-screen bg-cafe-bg text-cafe-text">
+        <p className="font-bold text-xl">Producto no encontrado</p>
+        <Link to="/menu" className="text-cafe-primary font-bold mt-4 border border-cafe-primary px-4 py-2 rounded-full hover:bg-cafe-primary hover:text-white transition-colors">
           Volver al menú
         </Link>
       </div>
     );
   }
 
-  // --- CONFIGURACIÓN DE EXTRAS ---
   const listaExtras = esBocadilloEmbutido
     ? []
     : producto.categoria === "Bebida caliente"
@@ -160,34 +101,14 @@ export default function DetalleProducto() {
           ]
         : ["Sin extras"];
 
-  const listaAlergenos = [
-    "Gluten",
-    "Crustáceos",
-    "Huevo",
-    "Pescado",
-    "Cacahuetes",
-    "Soja",
-    "Leche",
-    "Frutos con cáscara",
-    "Apio",
-    "Mostaza",
-    "Granos de Sésamo",
-    "Dióxido de azufre y sulfitos",
-    "Altramuces",
-    "Moluscos",
-  ];
-
-  // Lógica de precios del producto
   const precioEnteroReal = producto.precioEntero || producto.precio;
   const precioMedioReal = producto.precioMedio || producto.precio / 2;
-  const precioPulguitaReal = producto.precioPulguita || producto.precio;
 
   const opcionesTamano =
     producto.categoria === "Bocadillo"
       ? [
           { label: "Entero", precio: precioEnteroReal },
           { label: "Medio", precio: precioMedioReal },
-          { label: "Pulguita", precio: precioPulguitaReal },
         ]
       : [];
 
@@ -196,14 +117,10 @@ export default function DetalleProducto() {
     return match ? parseFloat(match[1]) : 0;
   };
 
-  // CÁLCULO DEL PRECIO REAL
   let precioBaseCalculado = producto.precio;
   if (producto.categoria === "Bocadillo") {
     if (tamanoSeleccionado === "Entero") precioBaseCalculado = precioEnteroReal;
-    else if (tamanoSeleccionado === "Medio")
-      precioBaseCalculado = precioMedioReal;
-    else if (tamanoSeleccionado === "Pulguita")
-      precioBaseCalculado = precioPulguitaReal;
+    else if (tamanoSeleccionado === "Medio") precioBaseCalculado = precioMedioReal;
     else precioBaseCalculado = precioEnteroReal;
   }
 
@@ -213,7 +130,6 @@ export default function DetalleProducto() {
 
   const precioTotal = precioBaseCalculado + precioTotalExtras;
 
-  // VALIDACIÓN DINÁMICA 
   let esValido = true;
   if (producto.categoria === "Bocadillo" && !tamanoSeleccionado) {
     esValido = false;
@@ -224,7 +140,6 @@ export default function DetalleProducto() {
     if (extrasSeleccionados.length === 0) esValido = false;
   }
 
-  // FUNCIONES TOGGLE 
   const toggleExtra = (extra: string) => {
     const opcionesUnicas = ["Sin extras", "Taza"];
     if (opcionesUnicas.includes(extra)) {
@@ -262,7 +177,6 @@ export default function DetalleProducto() {
     );
   };
 
-  // FUNCIONES PARA EMBUTIDOS 
   const addEmbutido = (emb: string) => {
     if (embutidosSeleccionados.length < maxEmbutidos) {
       setEmbutidosSeleccionados((prev) => [...prev, emb]);
@@ -307,7 +221,7 @@ export default function DetalleProducto() {
         extras: extrasFinales,
         precio: precioTotal,
         alergias: tieneAlergias ? alergiasSeleccionadas : [],
-      } as any);
+      });
 
       setMostrarConfirmacion(true);
       setTimeout(() => setMostrarConfirmacion(false), 2500);
@@ -349,44 +263,33 @@ export default function DetalleProducto() {
           {producto.desc}
         </p>
 
-        {/* VISOR DE ALÉRGENOS DEL PRODUCTO */}
-        {(producto as any).alergenos &&
-          (producto as any).alergenos.length > 0 && (
+        {/* ALÉRGENOS QUE CONTIENE EL PRODUCTO (Cápsulas legibles) */}
+        {producto.alergenos && producto.alergenos.length > 0 && (
             <div className="mt-6 border-t border-b border-black/5 dark:border-white/5 py-4">
               <h3 className="text-xs font-bold text-cafe-text opacity-50 uppercase tracking-wider mb-3">
                 Contiene alérgenos:
               </h3>
               <div className="flex flex-wrap gap-2">
-                {(producto as any).alergenos.map((alergeno: string) => {
-                  const config = ALERGENOS_CONFIG[alergeno] || {
-                    color: "bg-gray-500",
-                    icon: <AlertTriangle size={14} className="text-white" />,
-                  };
+                {producto.alergenos.map((alergenoId: string) => {
+                  const icono = ALERGENOS_CONFIG[alergenoId] || <AlertTriangle size={16} color="#666" />;
                   return (
                     <div
-                      key={alergeno}
+                      key={alergenoId}
                       className={cn(
-                        "flex items-center gap-2 pr-3 pl-1 py-1 rounded-full border shadow-sm",
+                        "px-3 py-1.5 rounded-full border shadow-sm flex items-center gap-2",
                         isDark
                           ? "bg-[#2C221C] border-white/5"
-                          : "bg-white border-black/5",
+                          : "bg-white border-gray-200"
                       )}
                     >
-                      <div
-                        className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-inner",
-                          config.color,
-                        )}
-                      >
-                        {config.icon}
-                      </div>
+                      {icono}
                       <span
                         className={cn(
                           "text-xs font-bold",
-                          isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
+                          isDark ? "text-[#F5EBDC]" : "text-[#4E342E]"
                         )}
                       >
-                        {alergeno}
+                        {alergenoId}
                       </span>
                     </div>
                   );
@@ -395,7 +298,6 @@ export default function DetalleProducto() {
             </div>
           )}
 
-        {/* SECCIÓN DE ALERGIAS DEL CLIENTE */}
         <div className="mt-8">
           <label className="flex items-center gap-4 cursor-pointer group select-none">
             <div className="relative flex items-center justify-center">
@@ -417,41 +319,31 @@ export default function DetalleProducto() {
             </span>
           </label>
 
+          {/* SELECTOR DE ALERGIAS (Botones legibles) */}
           {tieneAlergias && (
             <div className="mt-4 p-4 bg-black/5 dark:bg-white/5 rounded-2xl animate-in slide-in-from-top-2 duration-300">
               <p className="text-xs opacity-60 mb-3 font-medium">
                 Selecciona tus alergias para avisar a cocina:
               </p>
               <div className="flex flex-wrap gap-2">
-                {listaAlergenos.map((alergia) => {
-                  const config = ALERGENOS_CONFIG[alergia] || {
-                    color: "bg-gray-500",
-                    icon: <AlertTriangle size={14} className="text-white" />,
-                  };
-                  const isSelected = alergiasSeleccionadas.includes(alergia);
-
+                {listaAlergenos.map((alg) => {
+                  const isSelected = alergiasSeleccionadas.includes(alg);
+                  const icono = ALERGENOS_CONFIG[alg] || <AlertTriangle size={16} color="#666" />;
                   return (
                     <button
-                      key={alergia}
-                      onClick={() => toggleAlergia(alergia)}
+                      key={alg}
+                      onClick={() => toggleAlergia(alg)}
                       className={cn(
-                        "flex items-center gap-1.5 pr-3 pl-1.5 py-1.5 rounded-full text-[11px] font-bold transition-all border shadow-sm",
+                        "px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shadow-sm flex items-center gap-1.5",
                         isSelected
-                          ? "bg-cafe-primary/10 border-cafe-primary text-cafe-text dark:text-[#F5EBDC]"
-                          : "bg-white dark:bg-[#2C221C] border-transparent text-cafe-text/60 hover:bg-black/5 dark:hover:bg-white/5",
+                          ? "bg-[#4E342E] border-[#4E342E] text-white dark:bg-[#F5EBDC] dark:text-[#1A120B] dark:border-[#F5EBDC]"
+                          : isDark
+                            ? "bg-[#2C1F14] border-[#423224] text-[#F5EBDC] hover:bg-[#1A120B]"
+                            : "bg-white border-gray-200 text-[#4B3F35] hover:bg-gray-50"
                       )}
                     >
-                      <div
-                        className={cn(
-                          "w-5 h-5 rounded-full flex items-center justify-center transition-all shrink-0",
-                          isSelected
-                            ? config.color
-                            : "bg-gray-300 dark:bg-gray-700 grayscale opacity-50",
-                        )}
-                      >
-                        {config.icon}
-                      </div>
-                      {alergia}
+                      {isSelected ? <CheckCircle2 size={16} className={isDark ? "text-[#1A120B]" : "text-white"} /> : icono}
+                      {alg}
                     </button>
                   );
                 })}
@@ -460,7 +352,6 @@ export default function DetalleProducto() {
           )}
         </div>
 
-        {/* SECCIÓN TAMAÑO */}
         {producto.categoria === "Bocadillo" && (
           <div className="mt-8 animate-in slide-in-from-left duration-300">
             <h3 className="font-bold text-lg text-cafe-primary mb-4 border-b-2 border-cafe-primary/20 inline-block pb-1">
@@ -490,7 +381,6 @@ export default function DetalleProducto() {
           </div>
         )}
 
-        {/* SECCIÓN ELEGIR EMBUTIDOS */}
         {esBocadilloEmbutido && (
           <div className="mt-8">
             <h3 className="font-bold text-lg text-cafe-primary mb-4 border-b-2 border-cafe-primary/20 inline-block pb-1">
@@ -528,7 +418,6 @@ export default function DetalleProducto() {
                     </span>
 
                     <div className="flex items-center gap-3">
-                      {/* BOTÓN RESTAR */}
                       <button
                         onClick={() => removeEmbutido(emb)}
                         disabled={cantidad === 0}
@@ -542,7 +431,6 @@ export default function DetalleProducto() {
                         <Minus size={16} strokeWidth={2.5} />
                       </button>
 
-                      {/* NÚMERO */}
                       <span
                         className={cn(
                           "font-bold text-lg w-6 text-center transition-colors",
@@ -552,7 +440,6 @@ export default function DetalleProducto() {
                         {cantidad}
                       </span>
 
-                      {/* BOTÓN SUMAR */}
                       <button
                         onClick={() => addEmbutido(emb)}
                         disabled={noMas}
@@ -573,10 +460,7 @@ export default function DetalleProducto() {
           </div>
         )}
 
-        {/* INGREDIENTES NORMALES A QUITAR */}
-        {!esBocadilloEmbutido &&
-          (producto as any).ingredientes &&
-          (producto as any).ingredientes.length > 0 && (
+        {!esBocadilloEmbutido && producto.ingredientes && producto.ingredientes.length > 0 && (
             <div className="mt-8">
               <h3 className="font-bold text-lg text-cafe-primary mb-4 border-b-2 border-cafe-primary/20 inline-block pb-1">
                 El {producto.nombre.toLowerCase()} viene con:
@@ -586,7 +470,7 @@ export default function DetalleProducto() {
               </p>
 
               <div className="space-y-4">
-                {(producto as any).ingredientes.map((ing: string) => {
+                {producto.ingredientes.map((ing: string) => {
                   const isIncluido = !ingredientesQuitados.includes(ing);
 
                   return (
@@ -620,7 +504,6 @@ export default function DetalleProducto() {
             </div>
           )}
 
-        {/* SECCIÓN EXTRAS */}
         {!esBocadilloEmbutido && listaExtras.length > 0 && (
           <div className="mt-8">
             <h3 className="font-bold text-lg text-cafe-primary mb-4 border-b-2 border-cafe-primary/20 inline-block pb-1">
@@ -660,7 +543,6 @@ export default function DetalleProducto() {
           </div>
         )}
 
-        {/* BOTÓN AÑADIR */}
         <div className="mt-10 mb-4">
           <UiButton
             onClick={handleAnadir}
@@ -686,7 +568,6 @@ export default function DetalleProducto() {
         </div>
       </div>
 
-      {/* MODAL DE CONFIRMACIÓN */}
       {mostrarConfirmacion && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
           <div
