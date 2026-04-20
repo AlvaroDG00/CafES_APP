@@ -1,4 +1,4 @@
-import { useState } from "react"; // <-- CORRECCIÓN 1: Eliminado useEffect
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -10,7 +10,8 @@ import {
   EyeOff,
   ChevronDown,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  AlertCircle // Añadido este icono para avisos
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../lib/utils";
@@ -20,24 +21,28 @@ import { AxiosError } from "axios";
 export default function ConfiguracionCliente({
   usuarioInicial,
 }: {
-  // <-- CORRECCIÓN 2: Tipado seguro en lugar de 'any'
   usuarioInicial?: { turno?: string; nombre?: string }; 
 }) {
   const navigate = useNavigate();
   const { isDark, setIsDark } = useTheme();
 
-  // --- ESTADOS DE DATOS REALES ---
-  // <-- CORRECCIÓN 3: Quitamos setNombre porque aquí no editamos el nombre, solo lo leemos
+  // --- ESTADOS BÁSICOS ---
   const nombre = localStorage.getItem("usuario_nombre") || "Usuario";
   const [rol, setRol] = useState(localStorage.getItem("usuario_rol") || "Alumno");
   const email = localStorage.getItem("usuario_email") || "";
+  const usuarioId = localStorage.getItem("usuario_id") || ""; // Necesitamos el ID para los turnos
 
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
-  const [turno, setTurno] = useState(usuarioInicial?.turno || "Mañana");
+  
+  // --- ESTADOS DE TURNOS ---
+  // Inicializamos con el valor del localStorage si existe, o con un fallback
+  const [turno, setTurno] = useState(localStorage.getItem("usuario_turno") || usuarioInicial?.turno || "Mañana");
   const [mostrarMenuTurnos, setMostrarMenuTurnos] = useState(false);
+  const [loadingTurno, setLoadingTurno] = useState(false);
+  const [mensajeTurno, setMensajeTurno] = useState({ texto: "", error: false });
 
-  // Estados para la validación VIP
+  // --- ESTADOS DE VIP ---
   const [loadingVip, setLoadingVip] = useState(false);
   const [mensajeVip, setMensajeVip] = useState({ texto: "", error: false });
 
@@ -79,6 +84,56 @@ export default function ConfiguracionCliente({
   };
 
   // ==========================================
+  // 🕒 LÓGICA DE TURNOS REAL
+  // ==========================================
+  const handleCambiarTurno = async (nuevoTurno: string) => {
+    if (nuevoTurno === turno) {
+      setMostrarMenuTurnos(false);
+      return;
+    }
+
+    setLoadingTurno(true);
+    setMensajeTurno({ texto: "", error: false });
+    
+    try {
+      // 1. Verificamos si tiene permitido cambiar (cooldown de 24h)
+      const resCooldown = await api.get(`/usuario/${usuarioId}/cooldown`);
+      
+      if (resCooldown.data.bloqueado) {
+        const { horas, minutos } = resCooldown.data.tiempo_restante;
+        setMensajeTurno({ 
+          texto: `Debes esperar ${horas}h y ${minutos}m para otro cambio.`, 
+          error: true 
+        });
+        setMostrarMenuTurnos(false);
+        setLoadingTurno(false);
+        return;
+      }
+
+      // 2. Si no está bloqueado, hacemos el cambio real en el backend
+      await api.post("/cambiar-turno", {
+        usuario_id: usuarioId,
+        nuevo_turno: nuevoTurno
+      });
+
+      // 3. Si va bien, actualizamos el estado local y el localStorage
+      setTurno(nuevoTurno);
+      localStorage.setItem("usuario_turno", nuevoTurno);
+      setMensajeTurno({ texto: "Turno actualizado correctamente.", error: false });
+      setMostrarMenuTurnos(false);
+
+      // Limpiamos el mensaje de éxito después de 3 segundos
+      setTimeout(() => setMensajeTurno({ texto: "", error: false }), 3000);
+
+    } catch (error) {
+      console.error("Error al cambiar turno:", error);
+      setMensajeTurno({ texto: "Error de conexión al cambiar el turno.", error: true });
+    } finally {
+      setLoadingTurno(false);
+    }
+  };
+
+  // ==========================================
   // 🚪 FUNCIÓN: CERRAR SESIÓN SEGURO
   // ==========================================
   const handleLogout = () => {
@@ -86,6 +141,7 @@ export default function ConfiguracionCliente({
     localStorage.removeItem("usuario_rol");
     localStorage.removeItem("usuario_email");
     localStorage.removeItem("usuario_nombre");
+    localStorage.removeItem("usuario_turno"); // Añadido
     navigate("/inicio");
   };
 
@@ -138,7 +194,7 @@ export default function ConfiguracionCliente({
             isDark ? "bg-[#2C221C]" : "bg-white",
           )}
         >
-          {/* CAJÓN VIP: Solo se muestra si el usuario es Alumno */}
+          {/* CAJÓN VIP (Solo Alumnos) */}
           {rol === "Alumno" && (
             <div className="p-5 flex flex-col gap-2 border-b border-black/5 dark:border-white/5">
               <div className="flex items-center gap-4">
@@ -169,7 +225,7 @@ export default function ConfiguracionCliente({
                       <button
                         onClick={handleActivarVip}
                         disabled={loadingVip}
-                        className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-full shadow-md active:scale-95 transition-all"
+                        className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-full shadow-md active:scale-95 transition-all disabled:opacity-50"
                       >
                         {loadingVip ? "..." : "Activar"}
                       </button>
@@ -185,66 +241,78 @@ export default function ConfiguracionCliente({
             </div>
           )}
 
-          {/* Input Turno: Solo visible para Alumnos */}
+          {/* Selector de TURNOS (Solo Alumnos) */}
           {rol === "Alumno" && (
-            <div className="p-5 flex items-center gap-4 relative border-t border-black/5 dark:border-white/5">
-              <Clock className="text-green-500 shrink-0" size={20} />
-              <div className="flex-1 relative">
-                <p className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
-                  Turno asignado
-                </p>
+            <div className="p-5 flex flex-col gap-2 relative border-t border-black/5 dark:border-white/5">
+              <div className="flex items-center gap-4">
+                <Clock className="text-green-500 shrink-0" size={20} />
+                <div className="flex-1 relative">
+                  <p className="text-[10px] uppercase tracking-wider opacity-50 font-bold mb-1">
+                    Turno asignado
+                  </p>
 
-                <button
-                  onClick={() => setMostrarMenuTurnos(!mostrarMenuTurnos)}
-                  className={cn(
-                    "flex items-center justify-between w-full font-bold outline-none",
-                    isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
-                  )}
-                >
-                  <span>{turno}</span>
-                  <ChevronDown
-                    size={18}
+                  <button
+                    onClick={() => setMostrarMenuTurnos(!mostrarMenuTurnos)}
+                    disabled={loadingTurno}
                     className={cn(
-                      "transition-transform duration-300 opacity-50",
-                      mostrarMenuTurnos ? "rotate-180" : "",
-                    )}
-                  />
-                </button>
-
-                {mostrarMenuTurnos && (
-                  <div
-                    className={cn(
-                      "absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
-                      isDark
-                        ? "bg-[#1A120B] border-[#F5EBDC]/10"
-                        : "bg-[#FFFFFF] border-[#4E342E]/10",
+                      "flex items-center justify-between w-full font-bold outline-none",
+                      isDark ? "text-[#F5EBDC]" : "text-[#4E342E]",
+                      loadingTurno && "opacity-50 cursor-not-allowed"
                     )}
                   >
-                    {opcionesTurno.map((opcion) => (
-                      <button
-                        key={opcion}
-                        onClick={() => {
-                          setTurno(opcion);
-                          setMostrarMenuTurnos(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-4 py-3 text-sm font-bold flex items-center justify-between transition-colors",
-                          isDark
-                            ? "hover:bg-[#F5EBDC]/10 text-[#F5EBDC]"
-                            : "hover:bg-[#4E342E]/5 text-[#4E342E]",
-                          turno === opcion &&
-                            (isDark ? "bg-[#F5EBDC]/5" : "bg-[#4E342E]/5"),
-                        )}
-                      >
-                        {opcion}
-                        {turno === opcion && (
-                          <Check size={16} className="text-green-500" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                    <span>{loadingTurno ? "Comprobando..." : turno}</span>
+                    <ChevronDown
+                      size={18}
+                      className={cn(
+                        "transition-transform duration-300 opacity-50",
+                        mostrarMenuTurnos ? "rotate-180" : "",
+                      )}
+                    />
+                  </button>
+
+                  {mostrarMenuTurnos && (
+                    <div
+                      className={cn(
+                        "absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
+                        isDark
+                          ? "bg-[#1A120B] border-[#F5EBDC]/10"
+                          : "bg-[#FFFFFF] border-[#4E342E]/10",
+                      )}
+                    >
+                      {opcionesTurno.map((opcion) => (
+                        <button
+                          key={opcion}
+                          onClick={() => handleCambiarTurno(opcion)}
+                          className={cn(
+                            "w-full text-left px-4 py-3 text-sm font-bold flex items-center justify-between transition-colors",
+                            isDark
+                              ? "hover:bg-[#F5EBDC]/10 text-[#F5EBDC]"
+                              : "hover:bg-[#4E342E]/5 text-[#4E342E]",
+                            turno === opcion &&
+                              (isDark ? "bg-[#F5EBDC]/5" : "bg-[#4E342E]/5"),
+                          )}
+                        >
+                          {opcion}
+                          {turno === opcion && (
+                            <Check size={16} className="text-green-500" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+              
+              {/* Mensajes de error o éxito del cambio de turno */}
+              {mensajeTurno.texto && (
+                <div className={cn(
+                  "flex items-center gap-2 pl-9 text-xs font-bold mt-1",
+                  mensajeTurno.error ? "text-red-500" : "text-green-500"
+                )}>
+                  {mensajeTurno.error && <AlertCircle size={14} />}
+                  <p>{mensajeTurno.texto}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
