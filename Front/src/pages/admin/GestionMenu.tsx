@@ -159,7 +159,7 @@ export default function GestionMenu() {
                 </div>
 
                 <button
-                  onClick={() => setMenuAbierto(Number(prod.id))}
+                  onClick={() => handleToggle(Number(prod.id), estaDisponible)}
                   className={cn(
                     "p-2 rounded-full hover:bg-black/10 transition-colors shrink-0",
                     isDark ? "text-[#F5EBDC]/60" : "text-[#9CA3AF]",

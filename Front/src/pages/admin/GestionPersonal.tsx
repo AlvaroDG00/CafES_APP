@@ -124,7 +124,7 @@ export default function GestionPersonal() {
                   <div className="absolute right-0 top-10 w-40 bg-white dark:bg-[#FFFFFF] rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-50 overflow-hidden">
                     <button
                       onClick={() => {
-                        setIdEliminar(Number(emp.id));
+                        setMenuAbierto(menuAbierto === emp.id ? null : Number(emp.id))
                         setMenuAbierto(null);
                       }}
                       className="w-full p-4 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-sm font-bold"
