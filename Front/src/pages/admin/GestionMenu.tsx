@@ -131,7 +131,7 @@ export default function GestionMenu() {
                 <div className="flex items-center gap-4 flex-1 overflow-hidden">
                   {/* INTERRUPTOR CONFIGURADO */}
                   <button
-                    onClick={() => handleToggle(prod.id, estaDisponible)}
+                    onClick={() => handleToggle(Number(prod.id), estaDisponible)}
                     className={cn(
                       "w-12 h-6 rounded-full relative transition-colors duration-300 shrink-0",
                       estaDisponible
@@ -159,7 +159,7 @@ export default function GestionMenu() {
                 </div>
 
                 <button
-                  onClick={() => setMenuAbierto(prod.id)}
+                  onClick={() => handleToggle(Number(prod.id), estaDisponible)}
                   className={cn(
                     "p-2 rounded-full hover:bg-black/10 transition-colors shrink-0",
                     isDark ? "text-[#F5EBDC]/60" : "text-[#9CA3AF]",
